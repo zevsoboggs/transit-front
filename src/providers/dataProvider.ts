@@ -25,6 +25,11 @@ export const dataProvider: DataProvider = {
       };
     }
 
+    if (resource === "energy-orders") {
+      const res = await request<{ orders: unknown[]; count: number }>("/energy/orders");
+      return { data: res.orders as never, total: res.count };
+    }
+
     if (resource === "ledger") {
       const params: Record<string, string> = {};
       filters?.forEach((f) => {

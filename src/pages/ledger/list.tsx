@@ -25,6 +25,7 @@ import {
   PlusCircleOutlined,
   ReloadOutlined,
   SendOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import type { LedgerEntry, LedgerType } from "../../types";
 import { AddressText, NetworkTag } from "../../components/common";
@@ -40,6 +41,7 @@ const TYPE_META: Record<
   topup: { label: "Пополнение", color: "green", icon: <DollarOutlined /> },
   transfer: { label: "Перевод", color: "volcano", icon: <SendOutlined /> },
   rename: { label: "Переименование", color: "default", icon: <EditOutlined /> },
+  energy: { label: "Энергия", color: "gold", icon: <ThunderboltOutlined /> },
 };
 
 export function LedgerList() {

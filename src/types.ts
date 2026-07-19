@@ -58,7 +58,32 @@ export interface TransferInput {
   amount: number;
 }
 
-export type LedgerType = "issue" | "topup" | "transfer" | "rename";
+export interface EnergyOrder {
+  id: number;
+  ts: string;
+  duration: "1h" | "5m";
+  amount: number;
+  receiveAddress: string;
+  providerOrderId: string | null;
+  status: string;
+  estCostTrx: number | null;
+  detail: string | null;
+  userEmail: string | null;
+}
+
+export interface EnergyConfig {
+  depositAddress: string;
+  min: number;
+  max: number;
+  durations: ("1h" | "5m")[];
+  pricing: {
+    trxUsd: number | null;
+    priceSun1h: number | null;
+    priceSun5m: number | null;
+  } | null;
+}
+
+export type LedgerType = "issue" | "topup" | "transfer" | "rename" | "energy";
 export type LedgerStatus = "success" | "error";
 
 export interface LedgerEntry {
