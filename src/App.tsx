@@ -120,7 +120,24 @@ export default function App() {
             </Route>
           </Routes>
           <UnsavedChangesNotifier />
-          <DocumentTitleHandler />
+          <DocumentTitleHandler
+            handler={({ resource, action, pathname }) => {
+              const app = "Transit Wallets";
+              if (pathname === "/login") return `Вход · ${app}`;
+              const label = (resource?.meta?.label as string) || undefined;
+              const actionRu: Record<string, string> = {
+                create: "Новый",
+                edit: "Редактирование",
+                show: "Просмотр",
+                clone: "Копия",
+              };
+              if (label) {
+                const prefix = action && actionRu[action] ? `${actionRu[action]} — ` : "";
+                return `${prefix}${label} · ${app}`;
+              }
+              return app;
+            }}
+          />
         </Refine>
       </AntdApp>
     </ConfigProvider>
