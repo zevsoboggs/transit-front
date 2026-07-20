@@ -52,10 +52,12 @@ export function ClientShow() {
   const { data, isLoading, refetch, isFetching } = useCustom<{
     client: Client;
     transactions: ClientTransaction[];
+    minDeposit: number;
   }>({ url: `clients/${id}`, method: "get" });
 
   const client = data?.data.client;
   const transactions = data?.data.transactions ?? [];
+  const minDeposit = data?.data.minDeposit ?? 500;
 
   const { mutate, isLoading: acting } = useCustomMutation();
 
@@ -82,8 +84,17 @@ export function ClientShow() {
       { url: `clients/${id}/sync`, method: "post", values: {}, successNotification: false, errorNotification: false },
       {
         onSuccess: (res) => {
-          const credited = (res?.data as { credited?: number })?.credited ?? 0;
-          message.success(credited > 0 ? `Зачислено $${credited.toFixed(2)}` : "Новых поступлений нет");
+          const d = res?.data as { credited?: number; pending?: number; belowMin?: boolean; minDeposit?: number };
+          const credited = d?.credited ?? 0;
+          if (credited > 0) {
+            message.success(`Зачислено $${credited.toFixed(2)}`);
+          } else if (d?.belowMin && (d?.pending ?? 0) > 0) {
+            message.warning(
+              `Поступило $${(d.pending ?? 0).toFixed(2)} — меньше минимума $${(d.minDeposit ?? minDeposit).toFixed(0)}, не зачислено`,
+            );
+          } else {
+            message.info("Новых поступлений нет");
+          }
           refetch();
         },
         onError: (e) => message.error(e?.message || "Ошибка"),
@@ -181,6 +192,7 @@ export function ClientShow() {
                   <Space direction="vertical" align="center" size={10} style={{ width: "100%" }}>
                     <WalletQr address={client.depositAddress} size={150} />
                     <AddressText address={client.depositAddress} />
+                    <Tag color="blue">Минимальный депозит: {minDeposit} USDT</Tag>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       Клиент пополняет баланс, отправляя USDT сюда
                     </Text>
