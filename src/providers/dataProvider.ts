@@ -30,6 +30,11 @@ export const dataProvider: DataProvider = {
       return { data: res.orders as never, total: res.count };
     }
 
+    if (resource === "clients") {
+      const res = await request<{ clients: unknown[]; count: number }>("/clients");
+      return { data: res.clients as never, total: res.count };
+    }
+
     if (resource === "ledger") {
       const params: Record<string, string> = {};
       filters?.forEach((f) => {
@@ -64,6 +69,10 @@ export const dataProvider: DataProvider = {
   },
 
   getOne: async ({ resource, id }) => {
+    if (resource === "clients") {
+      const res = await request<{ client: unknown }>(`/clients/${id}`);
+      return { data: res.client as never };
+    }
     if (resource === "wallets") {
       const wallet = await transit.getWallet(String(id));
       return { data: wallet as never };

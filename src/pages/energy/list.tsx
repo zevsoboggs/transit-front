@@ -1,21 +1,16 @@
-import { useMemo, useState } from "react";
-import {
-  useCustom,
-  useCustomMutation,
-  useInvalidate,
-  useList,
-} from "@refinedev/core";
+import { useState } from "react";
+import { useCustom, useCustomMutation, useInvalidate, useList } from "@refinedev/core";
 import { List } from "@refinedev/antd";
 import {
   Button,
   Card,
   Col,
-  Divider,
   Form,
   Input,
   InputNumber,
   Row,
   Segmented,
+  Select,
   Space,
   Table,
   Tag,
@@ -23,12 +18,8 @@ import {
   Typography,
   message,
 } from "antd";
-import {
-  ReloadOutlined,
-  ThunderboltOutlined,
-  WalletOutlined,
-} from "@ant-design/icons";
-import type { EnergyConfig, EnergyOrder } from "../../types";
+import { ReloadOutlined, ThunderboltOutlined, WalletOutlined } from "@ant-design/icons";
+import type { Client, EnergyConfig, EnergyOrder } from "../../types";
 import { AddressText } from "../../components/common";
 import { WalletQr } from "../../components/WalletQr";
 import { formatAmount, formatDateTime } from "../../utils/format";
@@ -47,7 +38,6 @@ export function EnergyList() {
   const [form] = Form.useForm();
   const invalidate = useInvalidate();
   const [duration, setDuration] = useState<"1h" | "5m">("1h");
-  const [amount, setAmount] = useState<number>(65000);
 
   const { data: cfgData, isLoading: cfgLoading } = useCustom<EnergyConfig>({
     url: "energy/config",
@@ -55,20 +45,18 @@ export function EnergyList() {
   });
   const cfg = cfgData?.data;
 
+  const { data: clientsData } = useList<Client>({
+    resource: "clients",
+    pagination: { mode: "off" },
+  });
+  const clients = clientsData?.data ?? [];
+
   const { data: ordersData, isLoading: ordersLoading, refetch, isFetching } =
     useList<EnergyOrder>({ resource: "energy-orders", pagination: { mode: "off" } });
   const orders = ordersData?.data ?? [];
 
   const { mutate: placeOrder, isLoading: placing } = useCustomMutation();
   const { mutate: checkOrder } = useCustomMutation();
-
-  const priceSun = useMemo(() => {
-    if (!cfg?.pricing) return null;
-    return duration === "1h" ? cfg.pricing.priceSun1h : cfg.pricing.priceSun5m;
-  }, [cfg, duration]);
-
-  const estTrx = priceSun && amount ? (amount * priceSun) / 1_000_000 : null;
-  const estUsd = estTrx && cfg?.pricing?.trxUsd ? estTrx * cfg.pricing.trxUsd : null;
 
   const min = cfg?.min ?? 61000;
   const max = cfg?.max ?? 3000000;
@@ -79,7 +67,12 @@ export function EnergyList() {
         {
           url: "energy/order",
           method: "post",
-          values: { duration, amount: v.amount, receiveAddress: v.receiveAddress },
+          values: {
+            duration,
+            amount: v.amount,
+            receiveAddress: v.receiveAddress,
+            clientId: v.clientId || undefined,
+          },
           successNotification: false,
           errorNotification: false,
         },
@@ -88,6 +81,7 @@ export function EnergyList() {
             message.success("Заказ на делегирование энергии отправлен");
             form.resetFields(["receiveAddress"]);
             invalidate({ resource: "energy-orders", invalidates: ["list"] });
+            invalidate({ resource: "clients", invalidates: ["list"] });
           },
           onError: (e) => message.error(e?.message || "Не удалось создать заказ"),
         },
@@ -144,12 +138,7 @@ export function EnergyList() {
                 label={`Объём энергии (${formatAmount(min)}–${formatAmount(max)})`}
                 rules={[
                   { required: true, message: "Укажите объём" },
-                  {
-                    type: "number",
-                    min,
-                    max,
-                    message: `От ${formatAmount(min)} до ${formatAmount(max)}`,
-                  },
+                  { type: "number", min, max, message: `От ${formatAmount(min)} до ${formatAmount(max)}` },
                 ]}
               >
                 <InputNumber
@@ -157,7 +146,6 @@ export function EnergyList() {
                   min={min}
                   max={max}
                   step={1000}
-                  onChange={(v) => setAmount(Number(v) || 0)}
                   formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, " ")}
                   parser={(v) => Number((v || "").replace(/\s/g, ""))}
                 />
@@ -165,14 +153,7 @@ export function EnergyList() {
 
               <Space wrap style={{ marginTop: -8, marginBottom: 16 }}>
                 {[65000, 131000, 262000, 524000, 1000000].map((p) => (
-                  <Button
-                    key={p}
-                    size="small"
-                    onClick={() => {
-                      form.setFieldValue("amount", p);
-                      setAmount(p);
-                    }}
-                  >
+                  <Button key={p} size="small" onClick={() => form.setFieldValue("amount", p)}>
                     {formatAmount(p)}
                   </Button>
                 ))}
@@ -183,35 +164,26 @@ export function EnergyList() {
                 label="Адрес получателя (TRON)"
                 rules={[
                   { required: true, message: "Укажите адрес" },
-                  {
-                    pattern: /^T[1-9A-HJ-NP-Za-km-z]{33}$/,
-                    message: "Некорректный TRON-адрес",
-                  },
+                  { pattern: /^T[1-9A-HJ-NP-Za-km-z]{33}$/, message: "Некорректный TRON-адрес" },
                 ]}
               >
                 <Input placeholder="T..." style={{ fontFamily: "ui-monospace, monospace" }} />
               </Form.Item>
 
-              <div
-                style={{
-                  background: "#f8fafc",
-                  border: "1px solid #eef2f7",
-                  borderRadius: 10,
-                  padding: "10px 14px",
-                  marginBottom: 16,
-                }}
+              <Form.Item
+                name="clientId"
+                label="Списать с баланса клиента"
+                extra="Необязательно. Если выбрано — заказ оплачивается с баланса клиента."
               >
-                <Space split={<Divider type="vertical" />} wrap>
-                  <Text type="secondary">
-                    Цена:{" "}
-                    <b>{priceSun != null ? `${priceSun} sun/энергия` : "—"}</b>
-                  </Text>
-                  <Text type="secondary">
-                    Оценка: <b>{estTrx != null ? `≈ ${estTrx.toFixed(2)} TRX` : "—"}</b>
-                    {estUsd != null ? ` (≈ $${estUsd.toFixed(2)})` : ""}
-                  </Text>
-                </Space>
-              </div>
+                <Select
+                  allowClear
+                  placeholder="Без клиента (служебный заказ)"
+                  options={clients.map((c) => ({
+                    value: c.id,
+                    label: `${c.name} · $${c.balanceUsdt.toFixed(2)}`,
+                  }))}
+                />
+              </Form.Item>
 
               <Button
                 type="primary"
@@ -263,15 +235,10 @@ export function EnergyList() {
           dataSource={orders}
           loading={ordersLoading}
           rowKey="id"
-          scroll={{ x: 820 }}
+          scroll={{ x: 900 }}
           pagination={{ pageSize: 15, showSizeChanger: true }}
         >
-          <Table.Column<EnergyOrder>
-            title="Время"
-            dataIndex="ts"
-            width={150}
-            render={(v) => formatDateTime(v)}
-          />
+          <Table.Column<EnergyOrder> title="Время" dataIndex="ts" width={150} render={(v) => formatDateTime(v)} />
           <Table.Column<EnergyOrder>
             title="Длит."
             dataIndex="duration"
@@ -284,11 +251,16 @@ export function EnergyList() {
             render={(v: number) => <b>{formatAmount(v)}</b>}
           />
           <Table.Column<EnergyOrder>
-            title="≈ TRX"
-            dataIndex="estCostTrx"
+            title="Клиент"
+            dataIndex="clientName"
+            render={(v: string | null) => (v ? <Tag color="cyan">{v}</Tag> : <Text type="secondary">служебный</Text>)}
+          />
+          <Table.Column<EnergyOrder>
+            title="Списано"
+            dataIndex="chargeUsdt"
             align="right"
             render={(v: number | null) =>
-              v != null ? v.toFixed(2) : <Text type="secondary">—</Text>
+              v != null ? <b>${v.toFixed(2)}</b> : <Text type="secondary">—</Text>
             }
           />
           <Table.Column<EnergyOrder>

@@ -15,6 +15,7 @@ import {
   ApiOutlined,
   DashboardOutlined,
   ProfileOutlined,
+  TeamOutlined,
   ThunderboltOutlined,
   WalletOutlined,
 } from "@ant-design/icons";
@@ -34,6 +35,8 @@ import { WalletShow } from "./pages/wallets/show";
 import { NetworkList } from "./pages/networks/list";
 import { LedgerList } from "./pages/ledger/list";
 import { EnergyList } from "./pages/energy/list";
+import { ClientList } from "./pages/clients/list";
+import { ClientShow } from "./pages/clients/show";
 import { LoginPage } from "./pages/login";
 
 export default function App() {
@@ -57,6 +60,12 @@ export default function App() {
               create: "/wallets/create",
               show: "/wallets/show/:id",
               meta: { label: "Кошельки", icon: <WalletOutlined /> },
+            },
+            {
+              name: "clients",
+              list: "/clients",
+              show: "/clients/show/:id",
+              meta: { label: "Клиенты", icon: <TeamOutlined /> },
             },
             {
               name: "energy",
@@ -102,6 +111,10 @@ export default function App() {
                 <Route index element={<WalletList />} />
                 <Route path="create" element={<WalletCreate />} />
                 <Route path="show/:id" element={<WalletShow />} />
+              </Route>
+              <Route path="/clients">
+                <Route index element={<ClientList />} />
+                <Route path="show/:id" element={<ClientShow />} />
               </Route>
               <Route path="/energy" element={<EnergyList />} />
               <Route path="/ledger" element={<LedgerList />} />

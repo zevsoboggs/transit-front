@@ -67,6 +67,10 @@ export interface EnergyOrder {
   providerOrderId: string | null;
   status: string;
   estCostTrx: number | null;
+  chargeUsdt: number | null;
+  clientId: number | null;
+  clientName: string | null;
+  source: string;
   detail: string | null;
   userEmail: string | null;
 }
@@ -81,6 +85,31 @@ export interface EnergyConfig {
     priceSun1h: number | null;
     priceSun5m: number | null;
   } | null;
+}
+
+export interface Client {
+  id: number;
+  name: string;
+  note: string | null;
+  apiKey: string;
+  depositWalletId: string | null;
+  depositAddress: string | null;
+  network: string;
+  balanceUsdt: number;
+  depositedTotalUsdt: number;
+  status: "active" | "blocked";
+  createdAt: string;
+}
+
+export interface ClientTransaction {
+  id: number;
+  ts: string;
+  type: "deposit" | "charge" | "refund" | "adjust";
+  amountUsdt: number;
+  balanceAfter: number;
+  ref: string | null;
+  detail: string | null;
+  adminEmail: string | null;
 }
 
 export type LedgerType = "issue" | "topup" | "transfer" | "rename" | "energy";
