@@ -1,11 +1,17 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useMenu } from "@refinedev/core";
 import { Link } from "react-router-dom";
-import { Grid, Layout, Menu } from "antd";
+import { Grid, Menu } from "antd";
 import { AppTitle } from "./Title";
 import { HeaderUser } from "./HeaderUser";
 
-const { Sider } = Layout;
+const GAP = 12;
+
+const cardStyle: React.CSSProperties = {
+  background: "#fff",
+  borderRadius: 18,
+  boxShadow: "0 6px 24px rgba(15,23,42,.06)",
+};
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { menuItems, selectedKey } = useMenu();
@@ -13,7 +19,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isMobile = !screens.md;
   const [collapsed, setCollapsed] = useState(false);
 
-  // Auto-collapse on small screens.
   useEffect(() => {
     setCollapsed(isMobile);
   }, [isMobile]);
@@ -24,73 +29,49 @@ export function AppLayout({ children }: { children: ReactNode }) {
     label: item.route ? <Link to={item.route}>{item.label}</Link> : item.label,
   }));
 
-  const gap = 12;
-
   return (
-    <Layout style={{ minHeight: "100vh", background: "#eef2f7" }}>
-      <div
+    <div
+      style={{
+        minHeight: "100vh",
+        width: "100%",
+        background: "#eef2f7",
+        display: "flex",
+        gap: GAP,
+        padding: GAP,
+        alignItems: "flex-start",
+        boxSizing: "border-box",
+      }}
+    >
+      <aside
         style={{
-          display: "flex",
-          gap,
-          padding: gap,
-          minHeight: "100vh",
-          alignItems: "flex-start",
+          ...cardStyle,
+          flex: "0 0 auto",
+          width: collapsed ? 76 : 230,
+          transition: "width .2s ease",
+          overflow: "hidden",
+          position: "sticky",
+          top: GAP,
+          height: `calc(100vh - ${GAP * 2}px)`,
         }}
       >
-        <Sider
-          collapsed={collapsed}
-          collapsible
-          trigger={null}
-          width={230}
-          collapsedWidth={76}
-          theme="light"
-          style={{
-            background: "#fff",
-            borderRadius: 18,
-            boxShadow: "0 6px 24px rgba(15,23,42,.06)",
-            overflow: "hidden",
-            position: "sticky",
-            top: gap,
-            height: `calc(100vh - ${gap * 2}px)`,
-            flex: "0 0 auto",
-          }}
-        >
-          <div style={{ padding: collapsed ? "16px 0" : "16px 18px 8px", textAlign: collapsed ? "center" : "left" }}>
-            <AppTitle collapsed={collapsed} />
-          </div>
-          <Menu
-            mode="inline"
-            selectedKeys={[selectedKey]}
-            items={items}
-            style={{ border: "none", background: "transparent", paddingInline: 8 }}
-          />
-        </Sider>
+        <div style={{ padding: collapsed ? "16px 0" : "16px 18px 8px", textAlign: collapsed ? "center" : "left" }}>
+          <AppTitle collapsed={collapsed} />
+        </div>
+        <Menu
+          mode="inline"
+          inlineCollapsed={collapsed}
+          selectedKeys={[selectedKey]}
+          items={items}
+          style={{ border: "none", background: "transparent" }}
+        />
+      </aside>
 
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap,
-          }}
-        >
-          <HeaderUser collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
-          <div
-            style={{
-              flex: 1,
-              minWidth: 0,
-              background: "#fff",
-              borderRadius: 18,
-              boxShadow: "0 6px 24px rgba(15,23,42,.06)",
-              padding: "20px 24px",
-              minHeight: `calc(100vh - ${gap * 2 + 60 + gap}px)`,
-            }}
-          >
-            {children}
-          </div>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: GAP }}>
+        <HeaderUser collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+        <div style={{ ...cardStyle, flex: 1, minWidth: 0, padding: "20px 24px", minHeight: `calc(100vh - ${GAP * 3 + 60}px)` }}>
+          {children}
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }
