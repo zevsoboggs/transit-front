@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { Avatar, Dropdown, Layout, Menu, Space, Spin, Tag, Typography } from "antd";
+import { Avatar, Button, Dropdown, Grid, Layout, Menu, Space, Spin, Tag, Typography } from "antd";
 import {
   ApiOutlined,
   HistoryOutlined,
   LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   ProfileOutlined,
   ThunderboltOutlined,
   UserOutlined,
@@ -15,7 +17,7 @@ import { LkOrders } from "./LkOrders";
 import { LkTransactions } from "./LkTransactions";
 import { LkApiPage } from "./LkApiPage";
 
-const { Header, Content } = Layout;
+const { Sider } = Layout;
 const { Text } = Typography;
 
 const TABS = [
@@ -28,8 +30,13 @@ const TABS = [
 export function LkApp() {
   const navigate = useNavigate();
   const location = useLocation();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
+  const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState<LkProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => setCollapsed(isMobile), [isMobile]);
 
   const load = useCallback(async () => {
     try {
@@ -65,63 +72,71 @@ export function LkApp() {
     navigate("/lk/login", { replace: true });
   };
 
-  const selected = TABS.reduce(
-    (acc, t) => (location.pathname === t.key || (t.key !== "/lk" && location.pathname.startsWith(t.key)) ? t.key : acc),
-    "/lk",
-  );
+  const selected =
+    TABS.reduce<string>(
+      (acc, t) => (location.pathname === t.key || (t.key !== "/lk" && location.pathname.startsWith(t.key)) ? t.key : acc),
+      "/lk",
+    );
+
+  const gap = 12;
+  const card = {
+    background: "#fff",
+    borderRadius: 18,
+    boxShadow: "0 6px 24px rgba(15,23,42,.06)",
+  } as const;
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "#f4f6fb" }}>
-      <Header
-        style={{
-          background: "#fff",
-          borderBottom: "1px solid #eef2f7",
-          display: "flex",
-          alignItems: "center",
-          gap: 24,
-          padding: "0 24px",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <Space>
-          <ThunderboltOutlined style={{ color: "#2563eb", fontSize: 22 }} />
-          <Text strong style={{ fontSize: 16 }}>
-            Кабинет партнёра
-          </Text>
-        </Space>
-        <Menu
-          mode="horizontal"
-          selectedKeys={[selected]}
-          onClick={(e) => navigate(e.key)}
-          items={TABS.map((t) => ({ key: t.key, icon: t.icon, label: t.label }))}
-          style={{ flex: 1, borderBottom: "none" }}
-        />
-        <Space>
-          <Tag color="green" style={{ fontWeight: 600 }}>
-            ${profile.balance.toFixed(2)}
-          </Tag>
-          <Dropdown
-            menu={{ items: [{ key: "out", icon: <LogoutOutlined />, label: "Выйти", danger: true, onClick: logout }] }}
-          >
-            <Space style={{ cursor: "pointer" }}>
-              <Avatar size="small" icon={<UserOutlined />} style={{ background: "#2563eb" }} />
-              <Text>{profile.name}</Text>
+    <Layout style={{ minHeight: "100vh", background: "#eef2f7" }}>
+      <div style={{ display: "flex", gap, padding: gap, minHeight: "100vh", alignItems: "flex-start" }}>
+        <Sider
+          collapsed={collapsed}
+          collapsible
+          trigger={null}
+          width={230}
+          collapsedWidth={76}
+          theme="light"
+          style={{ ...card, overflow: "hidden", position: "sticky", top: gap, height: `calc(100vh - ${gap * 2}px)`, flex: "0 0 auto" }}
+        >
+          <div style={{ padding: collapsed ? "18px 0" : "18px 18px 10px", textAlign: collapsed ? "center" : "left" }}>
+            <Space size={10}>
+              <ThunderboltOutlined style={{ color: "#2563eb", fontSize: 22 }} />
+              {!collapsed && <Text strong style={{ fontSize: 15, whiteSpace: "nowrap" }}>Кабинет партнёра</Text>}
             </Space>
-          </Dropdown>
-        </Space>
-      </Header>
+          </div>
+          <Menu
+            mode="inline"
+            selectedKeys={[selected]}
+            onClick={(e) => navigate(e.key)}
+            items={TABS.map((t) => ({ key: t.key, icon: t.icon, label: t.label }))}
+            style={{ border: "none", background: "transparent", paddingInline: 8 }}
+          />
+        </Sider>
 
-      <Content style={{ padding: 24, maxWidth: 1080, margin: "0 auto", width: "100%" }}>
-        <Routes>
-          <Route index element={<LkDashboard profile={profile} onChange={load} />} />
-          <Route path="orders" element={<LkOrders />} />
-          <Route path="history" element={<LkTransactions />} />
-          <Route path="api" element={<LkApiPage profile={profile} />} />
-          <Route path="*" element={<Navigate to="/lk" replace />} />
-        </Routes>
-      </Content>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap }}>
+          <div style={{ ...card, height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px 0 8px" }}>
+            <Button type="text" icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={() => setCollapsed((c) => !c)} />
+            <Space>
+              <Tag color="green" style={{ fontWeight: 600 }}>${profile.balance.toFixed(2)}</Tag>
+              <Dropdown menu={{ items: [{ key: "out", icon: <LogoutOutlined />, label: "Выйти", danger: true, onClick: logout }] }}>
+                <Space style={{ cursor: "pointer" }}>
+                  <Avatar size="small" icon={<UserOutlined />} style={{ background: "#2563eb" }} />
+                  <Text>{profile.name}</Text>
+                </Space>
+              </Dropdown>
+            </Space>
+          </div>
+
+          <div style={{ ...card, flex: 1, minWidth: 0, padding: "20px 24px", minHeight: `calc(100vh - ${gap * 3 + 60}px)` }}>
+            <Routes>
+              <Route index element={<LkDashboard profile={profile} onChange={load} />} />
+              <Route path="orders" element={<LkOrders />} />
+              <Route path="history" element={<LkTransactions />} />
+              <Route path="api" element={<LkApiPage profile={profile} />} />
+              <Route path="*" element={<Navigate to="/lk" replace />} />
+            </Routes>
+          </div>
+        </div>
+      </div>
     </Layout>
   );
 }

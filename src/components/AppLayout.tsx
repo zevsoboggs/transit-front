@@ -76,7 +76,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
           }}
         >
           <HeaderUser collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
-          <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              background: "#fff",
+              borderRadius: 18,
+              boxShadow: "0 6px 24px rgba(15,23,42,.06)",
+              padding: "20px 24px",
+              minHeight: `calc(100vh - ${gap * 2 + 60 + gap}px)`,
+            }}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </Layout>
