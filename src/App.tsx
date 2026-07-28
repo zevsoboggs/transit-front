@@ -1,9 +1,5 @@
 import { Authenticated, Refine } from "@refinedev/core";
-import {
-  ErrorComponent,
-  ThemedLayoutV2,
-  useNotificationProvider,
-} from "@refinedev/antd";
+import { ErrorComponent, useNotificationProvider } from "@refinedev/antd";
 import routerBindings, {
   CatchAllNavigate,
   DocumentTitleHandler,
@@ -26,8 +22,7 @@ import "@refinedev/antd/dist/reset.css";
 import { dataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
 import { lightTheme } from "./theme";
-import { AppTitle } from "./components/Title";
-import { HeaderUser } from "./components/HeaderUser";
+import { AppLayout } from "./components/AppLayout";
 import { DashboardPage } from "./pages/dashboard";
 import { WalletList } from "./pages/wallets/list";
 import { WalletCreate } from "./pages/wallets/create";
@@ -103,12 +98,9 @@ export default function App() {
                   key="authenticated-routes"
                   fallback={<CatchAllNavigate to="/login" />}
                 >
-                  <ThemedLayoutV2
-                    Title={({ collapsed }) => <AppTitle collapsed={collapsed} />}
-                    Header={() => <HeaderUser />}
-                  >
+                  <AppLayout>
                     <Outlet />
-                  </ThemedLayoutV2>
+                  </AppLayout>
                 </Authenticated>
               }
             >

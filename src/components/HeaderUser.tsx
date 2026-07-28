@@ -1,6 +1,11 @@
 import { useGetIdentity, useLogout } from "@refinedev/core";
-import { Avatar, Dropdown, Layout, Space, Typography } from "antd";
-import { LogoutOutlined, UserOutlined } from "@ant-design/icons";
+import { Avatar, Button, Dropdown, Space, Typography } from "antd";
+import {
+  LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 
 interface Identity {
   id: number;
@@ -8,25 +13,34 @@ interface Identity {
   email: string;
 }
 
-export function HeaderUser() {
+export function HeaderUser({
+  collapsed,
+  onToggle,
+}: {
+  collapsed?: boolean;
+  onToggle?: () => void;
+}) {
   const { data: user } = useGetIdentity<Identity>();
   const { mutate: logout } = useLogout();
 
   return (
-    <Layout.Header
+    <div
       style={{
         background: "#fff",
-        padding: "0 24px",
-        height: 64,
+        height: 60,
         display: "flex",
         alignItems: "center",
-        justifyContent: "flex-end",
-        borderBottom: "1px solid #eef2f7",
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
+        justifyContent: "space-between",
+        padding: "0 12px 0 8px",
+        borderRadius: 18,
+        boxShadow: "0 6px 24px rgba(15,23,42,.06)",
       }}
     >
+      <Button
+        type="text"
+        icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        onClick={onToggle}
+      />
       <Dropdown
         menu={{
           items: [
@@ -45,6 +59,6 @@ export function HeaderUser() {
           <Typography.Text>{user?.name || user?.email || "Пользователь"}</Typography.Text>
         </Space>
       </Dropdown>
-    </Layout.Header>
+    </div>
   );
 }
