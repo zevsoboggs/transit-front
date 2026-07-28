@@ -38,6 +38,8 @@ import { EnergyList } from "./pages/energy/list";
 import { ClientList } from "./pages/clients/list";
 import { ClientShow } from "./pages/clients/show";
 import { LoginPage } from "./pages/login";
+import { LkApp } from "./lk/LkApp";
+import { LkLogin } from "./lk/LkLogin";
 
 export default function App() {
   return (
@@ -91,6 +93,10 @@ export default function App() {
           }}
         >
           <Routes>
+            {/* Client cabinet (LK) — separate auth, outside the admin guard. */}
+            <Route path="/lk/login" element={<LkLogin />} />
+            <Route path="/lk/*" element={<LkApp />} />
+
             <Route
               element={
                 <Authenticated

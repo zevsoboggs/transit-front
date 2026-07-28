@@ -45,9 +45,11 @@ export function ClientShow() {
   const { id } = useParsed();
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [orderOpen, setOrderOpen] = useState(false);
+  const [credOpen, setCredOpen] = useState(false);
   const [duration, setDuration] = useState<"1h" | "5m">("1h");
   const [adjustForm] = Form.useForm();
   const [orderForm] = Form.useForm();
+  const [credForm] = Form.useForm();
 
   const { data, isLoading, refetch, isFetching } = useCustom<{
     client: Client;
@@ -137,6 +139,14 @@ export function ClientShow() {
         },
         onError: (e) => message.error(e?.message || "Ошибка"),
       },
+    );
+
+  const saveCred = () =>
+    credForm.validateFields().then((v) =>
+      run(`clients/${id}/credentials`, { email: v.email, password: v.password }, "Доступ в кабинет сохранён", () => {
+        setCredOpen(false);
+        credForm.resetFields();
+      }),
     );
 
   return (
@@ -233,6 +243,28 @@ export function ClientShow() {
               </Card>
             </Col>
           </Row>
+
+          <Card
+            title="Доступ в кабинет партнёра (ЛК)"
+            style={{ marginTop: 20 }}
+            extra={
+              <Button icon={<KeyOutlined />} onClick={() => setCredOpen(true)}>
+                {client.hasLogin ? "Сменить доступ" : "Выдать доступ"}
+              </Button>
+            }
+          >
+            {client.hasLogin ? (
+              <Space>
+                <Tag color="green">Доступ выдан</Tag>
+                <Text>Email входа: <Text strong copyable>{client.email}</Text></Text>
+              </Space>
+            ) : (
+              <Text type="secondary">
+                Доступ не выдан. Нажмите «Выдать доступ», задайте email и пароль — клиент сможет войти в
+                кабинет на <Text code>/lk</Text>.
+              </Text>
+            )}
+          </Card>
 
           <Card title="История операций" style={{ marginTop: 20 }}>
             <Table dataSource={transactions} rowKey="id" scroll={{ x: 700 }} pagination={{ pageSize: 15 }}>
@@ -339,6 +371,42 @@ export function ClientShow() {
             <Input placeholder="T..." style={{ fontFamily: "ui-monospace, monospace" }} />
           </Form.Item>
           <Text type="secondary">Стоимость спишется с баланса клиента (${client?.balanceUsdt.toFixed(2)}).</Text>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Доступ в кабинет партнёра"
+        open={credOpen}
+        onOk={saveCred}
+        onCancel={() => setCredOpen(false)}
+        okText="Сохранить"
+        confirmLoading={acting}
+        destroyOnClose
+      >
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message="Клиент войдёт этими данными на странице /lk. Передайте их ему любым безопасным способом."
+        />
+        <Form form={credForm} layout="vertical" initialValues={{ email: client?.email ?? "" }}>
+          <Form.Item
+            name="email"
+            label="Email для входа"
+            rules={[
+              { required: true, message: "Укажите email" },
+              { type: "email", message: "Некорректный email" },
+            ]}
+          >
+            <Input placeholder="client@example.com" autoComplete="off" />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label="Пароль"
+            rules={[{ required: true, min: 6, message: "Минимум 6 символов" }]}
+          >
+            <Input.Password placeholder="Минимум 6 символов" autoComplete="new-password" />
+          </Form.Item>
         </Form>
       </Modal>
     </Show>

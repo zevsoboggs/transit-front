@@ -98,6 +98,8 @@ export interface Client {
   balanceUsdt: number;
   depositedTotalUsdt: number;
   status: "active" | "blocked";
+  email: string | null;
+  hasLogin: boolean;
   createdAt: string;
 }
 
