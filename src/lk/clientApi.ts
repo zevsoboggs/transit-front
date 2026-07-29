@@ -116,4 +116,9 @@ export const clientApi = {
     ),
   orders: () => req<{ orders: LkOrder[]; count: number }>("/v1/energy/orders"),
   transactions: () => req<{ transactions: LkTransaction[]; count: number }>("/v1/transactions"),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    req<{ ok: boolean }>("/v1/change-password", {
+      method: "POST",
+      body: { currentPassword, newPassword },
+    }),
 };

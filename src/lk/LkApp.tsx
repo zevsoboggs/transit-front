@@ -1,9 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { Avatar, Button, Dropdown, Grid, Menu, Space, Spin, Tag, Typography } from "antd";
+import {
+  Avatar,
+  Button,
+  Dropdown,
+  Form,
+  Grid,
+  Input,
+  Menu,
+  Modal,
+  Space,
+  Spin,
+  Tag,
+  Typography,
+  message,
+} from "antd";
 import {
   ApiOutlined,
   HistoryOutlined,
+  KeyOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -41,6 +56,9 @@ export function LkApp() {
   const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState<LkProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pwdOpen, setPwdOpen] = useState(false);
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdForm] = Form.useForm();
 
   useEffect(() => setCollapsed(isMobile), [isMobile]);
 
@@ -77,6 +95,21 @@ export function LkApp() {
     lkLogout();
     navigate("/lk/login", { replace: true });
   };
+
+  const changePassword = () =>
+    pwdForm.validateFields().then(async (v) => {
+      setPwdSaving(true);
+      try {
+        await clientApi.changePassword(v.currentPassword, v.newPassword);
+        message.success("Пароль изменён");
+        setPwdOpen(false);
+        pwdForm.resetFields();
+      } catch (e) {
+        message.error(e instanceof Error ? e.message : "Не удалось сменить пароль");
+      } finally {
+        setPwdSaving(false);
+      }
+    });
 
   const selected = TABS.reduce<string>(
     (acc, t) => (location.pathname === t.key || (t.key !== "/lk" && location.pathname.startsWith(t.key)) ? t.key : acc),
@@ -135,7 +168,15 @@ export function LkApp() {
             <Tag color="green" style={{ fontWeight: 600 }}>
               ${profile.balance.toFixed(2)}
             </Tag>
-            <Dropdown menu={{ items: [{ key: "out", icon: <LogoutOutlined />, label: "Выйти", danger: true, onClick: logout }] }}>
+            <Dropdown
+              menu={{
+                items: [
+                  { key: "pwd", icon: <KeyOutlined />, label: "Сменить пароль", onClick: () => setPwdOpen(true) },
+                  { type: "divider" },
+                  { key: "out", icon: <LogoutOutlined />, label: "Выйти", danger: true, onClick: logout },
+                ],
+              }}
+            >
               <Space style={{ cursor: "pointer" }}>
                 <Avatar size="small" icon={<UserOutlined />} style={{ background: "#2563eb" }} />
                 <Text>{profile.name}</Text>
@@ -154,6 +195,51 @@ export function LkApp() {
           </Routes>
         </div>
       </div>
+
+      <Modal
+        title="Смена пароля"
+        open={pwdOpen}
+        onOk={changePassword}
+        onCancel={() => setPwdOpen(false)}
+        okText="Сохранить"
+        confirmLoading={pwdSaving}
+        destroyOnClose
+      >
+        <Form form={pwdForm} layout="vertical">
+          <Form.Item
+            name="currentPassword"
+            label="Текущий пароль"
+            rules={[{ required: true, message: "Введите текущий пароль" }]}
+          >
+            <Input.Password autoComplete="current-password" placeholder="Текущий пароль" />
+          </Form.Item>
+          <Form.Item
+            name="newPassword"
+            label="Новый пароль"
+            rules={[{ required: true, min: 6, message: "Минимум 6 символов" }]}
+            hasFeedback
+          >
+            <Input.Password autoComplete="new-password" placeholder="Новый пароль" />
+          </Form.Item>
+          <Form.Item
+            name="confirm"
+            label="Повторите новый пароль"
+            dependencies={["newPassword"]}
+            hasFeedback
+            rules={[
+              { required: true, message: "Повторите пароль" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("newPassword") === value) return Promise.resolve();
+                  return Promise.reject(new Error("Пароли не совпадают"));
+                },
+              }),
+            ]}
+          >
+            <Input.Password autoComplete="new-password" placeholder="Повторите новый пароль" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
